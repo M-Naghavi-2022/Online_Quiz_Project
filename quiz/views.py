@@ -124,7 +124,9 @@ class AnswerQuizView(View):
 
             if  quiz_item_obj.user_answer == quiz_obj.correct_answers[f"{i}"]:
                 quiz_obj.result['total_score'] += 3
-                quiz_obj.result['correct_ans'] += 1                
+                quiz_obj.result['correct_ans'] += 1
+            elif quiz_item_obj.user_answer == "":
+                continue                
             else:
                 quiz_obj.result['total_score'] -= 1
                 quiz_obj.result['wrong_ans'] += 1
