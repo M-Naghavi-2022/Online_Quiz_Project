@@ -32,6 +32,7 @@ class Question(models.Model):
 
 class Quiz(models.Model):
     user = models.ForeignKey(Profile, on_delete= models.CASCADE)
+    user_quiz_number = models.IntegerField(default= 1)
     generation_request_date = models.DateTimeField(auto_now_add= True)
     done = models.BooleanField(default= False)
     completion_date = models.DateTimeField(null= True, blank= True)
@@ -39,7 +40,7 @@ class Quiz(models.Model):
     result = models.JSONField(default= {'total_score': 0, 'correct_ans': 0, 'wrong_ans' : 0, 'blank_ans' : 0})
 
     def __str__(self) -> str:
-        return f'{self.user} @ {self.generation_request_date}'
+        return f'{self.user} / {self.user_quiz_number} @ {self.generation_request_date}'
 
 
 class QuizItem(models.Model):

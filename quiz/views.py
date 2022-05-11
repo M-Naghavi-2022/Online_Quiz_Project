@@ -59,9 +59,10 @@ class GenerateQuizView(View):
             res = total_question_number%len(categories_str)
             for i in range(res):
                 categories_questions_number[categories_str[i]] += 1
-
-        quiz_obj: Quiz = Quiz.objects.create(user = user)
-        quiz = {"username": user.username, "quiz_number": quiz_obj.id}
+        
+        quiz_num = Quiz.objects.filter(user=user).count() + 1
+        quiz_obj: Quiz = Quiz.objects.create(user = user, user_quiz_number = quiz_num)
+        quiz = {"username": user.username, "quiz_number": quiz_obj.user_quiz_number}
         quiz_correct_answers = {}
         quiz_question_number = 1
         for elm in categories_obj:
@@ -106,20 +107,18 @@ class AnswerQuizView(View):
         if self._is_valid_data(data)["error"]:
             return JsonResponse(self._is_valid_data(data), status=400)
 
-        user: Profile = get_object_or_404(Profile, username=data.get("username"))
+        user: Profile = get_object_or_404(Profile, username= data.get("username"))
         del data['username']
 
-        quiz_obj: Quiz = get_object_or_404(Quiz, id=data.get("quiz_number"))
+        quiz_obj: Quiz = get_object_or_404(Quiz, user= user, user_quiz_number= data.get("quiz_number"))
         del data['quiz_number']
 
-        if quiz_obj.user != user:
-            return JsonResponse({'status':'false','message':"This quiz was not assigned to you, You are not allowed to answer it"}, status=400)
         if quiz_obj.done:
             return JsonResponse({'status':'false','message':"You have already answered this quiz and cannot answer it more than once, please requst a new one to answer!"}, status=400)
 
         for i in data.keys():
 
-            quiz_item_obj: QuizItem = get_object_or_404(QuizItem, quiz= quiz_obj.id, quiz_related_number=i)
+            quiz_item_obj: QuizItem = get_object_or_404(QuizItem, quiz= quiz_obj, quiz_related_number=i)
             quiz_item_obj.user_answer = data.get(f"{i}")
 
             if  quiz_item_obj.user_answer == quiz_obj.correct_answers[f"{i}"]:
@@ -137,7 +136,7 @@ class AnswerQuizView(View):
         quiz_obj.completion_date = datetime.now()
         quiz_obj.save()
 
-        quiz_result = {"username": user.username, "quiz_number": quiz_obj.id, "quiz_result":quiz_obj.result}
+        quiz_result = {"username": user.username, "quiz_number": quiz_obj.user_quiz_number, "quiz_result":quiz_obj.result}
         return JsonResponse(quiz_result)
 
 
@@ -154,6 +153,6 @@ class QuizHistoryView(View):
             return JsonResponse({'status':'false','message':"Please include your username in the Json"}, status=400)
 
         user: Profile = get_object_or_404(Profile, username=data.get("username"))
-        quiz_history = Quiz.objects.filter(user=user).values('id','generation_request_date','done','completion_date','result')
+        quiz_history = Quiz.objects.filter(user=user).values('user_quiz_number','generation_request_date','done','completion_date','result')
         quiz_history = list(quiz_history)
         return JsonResponse({'username':user.username, 'quiz_history':quiz_history})
